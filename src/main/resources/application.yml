@@ -1,25 +1,36 @@
 logging:
   level:
-    org.springframework.kafka: DEBUG
     org.apache.kafka: DEBUG
-    io.confluent.kafka.serializers: DEBUG
+    org.springframework.kafka: DEBUG
+    org.apache.kafka.clients.producer: DEBUG
+    org.apache.kafka.common.errors: DEBUG
+
 server:
   port: 8181
+  
+management:
+  endpoints:
+    web:
+      exposure:
+        include: hawtio,jolokia
+
+hawtio:
+    authenticationEnabled: false
+
 spring:
   application:
     name: poc-spring-kafka
   jmx:
     enabled: true
   kafka:
-    admin:
-      auto-create: true
-      fail-fast: true
     bootstrap-servers: localhost:9092
+
     consumer:
-      default-group-id: pfx_
-      auto-offset-reset: earliest
+      group-id: default-group-id
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
       enable-auto-commit: true
-      client-id: ${spring.application.name}
+      auto-offset-reset: earliest
       max-poll-records: 30
       properties:
         schema.registry.url: http://localhost:8081
@@ -28,16 +39,10 @@ spring:
         request.timeout.ms: 80000
         fetch.max.bytes: 419430400 #400MB
         max.partition.fetch.bytes: 4194304 #4MB
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
-      group-id: a
-    listener:
-      type: batch
-      concurrency: 2
-      ack-mode: batch
-      poll-timeout: 90000
-      auto-startup: true
+
     producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
       properties:
         batch.size: 16384  # 16 KB
         linger.ms: 10
@@ -46,10 +51,19 @@ spring:
           remove:
             java:
               properties: true
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+        schema.registry.url: http://localhost:8081
+
+    listener:
+      type: batch
+      concurrency: 2
+      ack-mode: batch
+      poll-timeout: 90000
+      auto-startup: true
+
+    admin:
+      properties:
+        retries: 3
+
     topics:
       topic-1: topico-exemplo-1
-    properties:
-      schema.registry.url: localhost:8081
-
+      group-1: pfx_${spring.kafka.topics.topic-1}
