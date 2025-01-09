@@ -1,0 +1,11 @@
+{
+  "namespace": "com.spring_kafka.poc.config",
+  "type": "record",
+  "name": "Example",
+  "fields": [
+    {
+      "name": "message",
+      "type": "string"
+    }
+  ]
+}

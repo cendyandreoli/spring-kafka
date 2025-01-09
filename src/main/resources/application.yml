@@ -1,0 +1,59 @@
+logging:
+  level:
+    org.springframework.kafka: DEBUG
+    org.apache.kafka: DEBUG
+    io.confluent.kafka.serializers: DEBUG
+server:
+  port: 8181
+spring:
+  application:
+    name: poc-spring-kafka
+  jmx:
+    enabled: true
+  kafka:
+    admin:
+      auto-create: true
+      fail-fast: true
+    bootstrap-servers: localhost:9092
+    consumer:
+      default-group-id: pfx_
+      auto-offset-reset: earliest
+      enable-auto-commit: true
+      client-id: ${spring.application.name}
+      max-poll-records: 30
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: io.confluent.kafka.serializers.KafkaAvroDeserializer
+        schema.registry.url: http://localhost:8081
+        specific.avro.reader: true
+        fetch.max.wait.ms: 70000
+        request.timeout.ms: 80000
+        fetch.max.bytes: 419430400 #400MB
+        max.partition.fetch.bytes: 4194304 #4MB
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      group-id: a
+    listener:
+      type: batch
+      concurrency: 2
+      ack-mode: batch
+      poll-timeout: 90000
+      auto-startup: true
+    producer:
+      properties:
+        batch.size: 16384  # 16 KB
+        linger.ms: 10
+        compression.type: snappy
+        key.subject.name.strategy: io.confluent.kafka.serializers.subject.TopicNameStrategy
+        value.subject.name.strategy: io.confluent.kafka.serializers.subject.TopicNameStrategy
+        avro:
+          remove:
+            java:
+              properties: true
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+    topics:
+      topic-1: topico-exemplo-1
+    properties:
+      schema.registry.url: localhost:8081
+

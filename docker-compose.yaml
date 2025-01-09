@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"   # Listener Externo
+      - "29092:29092" # Listener Interno para Docker
+      - "9101:9101"   # JMX
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+
+      # Definição de múltiplos listeners com nomes distintos
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      # Configurações JMX
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: 0.0.0.0
+      KAFKA_JMX_OPTS: >-
+        -Dcom.sun.management.jmxremote=true
+        -Dcom.sun.management.jmxremote.local.only=false
+        -Dcom.sun.management.jmxremote.rmi.port=9101
+        -Dcom.sun.management.jmxremote.port=9101
+        -Dcom.sun.management.jmxremote.ssl=false
+        -Dcom.sun.management.jmxremote.authenticate=false
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.0
+    container_name: schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://kafka:29092'
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8081'
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus
+    depends_on:
+      - kafka
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:9.5.0
+    container_name: grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+      - schema-registry
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "local"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092" # Usa o listener interno
+      KAFKA_CLUSTERS_0_ZOOKEEPER: "zookeeper:2181"
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8081"
+
+volumes:
+  zookeeper-data:
+  kafka-data:
