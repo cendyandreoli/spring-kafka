@@ -1,7 +1,7 @@
 {
   "namespace": "com.spring_kafka.poc.config",
   "type": "record",
-  "name": "Example",
+  "name": "ExampleAvro",
   "fields": [
     {
       "name": "message",

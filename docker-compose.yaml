@@ -16,21 +16,19 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"   # Listener Externo
-      - "29092:29092" # Listener Interno para Docker
-      - "9101:9101"   # JMX
+      - "9092:9092"
+      - "29092:29092"
+      - "9101:9101"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
 
-      # Definição de múltiplos listeners com nomes distintos
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
-      # Configurações JMX
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: 0.0.0.0
       KAFKA_JMX_OPTS: >-
@@ -81,7 +79,7 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: "local"
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092" # Usa o listener interno
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092"
       KAFKA_CLUSTERS_0_ZOOKEEPER: "zookeeper:2181"
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8081"
 

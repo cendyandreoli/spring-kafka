@@ -1,6 +1,7 @@
 package com.spring_kafka.poc.infrastructure.inbound.consumer;
 
-import com.spring_kafka.poc.config.Example;
+import com.spring_kafka.poc.config.ExampleAvro;
+import com.spring_kafka.poc.infrastructure.outbound.producer.support.dlt.GenericDltProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -14,12 +15,27 @@ import static com.spring_kafka.poc.config.KafkaRetryConsumerConfig.KAFKA_LISTENE
 @RequiredArgsConstructor
 public class ExampleConsumer {
 
+    private final GenericDltProducer genericDltProducer;
+
     @KafkaListener(
-            topics = "${spring.kafka.topics.topic-1}",
+            topics = "${spring.kafka.topics.example.topic}",
             containerFactory =KAFKA_LISTENER_CONTAINER_FACTORY,
-            groupId = "${spring.kafka.topics.group-1}"
+            groupId = "${spring.kafka.topics.example.group}"
     )
-    public void listen(Message<Example> transactionEventMessage) {
-        log.info("Starting consuming from transaction_events_topic - {}", transactionEventMessage.toString());
+    public void listen(Message<ExampleAvro> exampleMessage) {
+        try {
+            log.info("Starting consuming from example_topic - {}", exampleMessage.toString());
+            if ("fail".equals(exampleMessage.getPayload().getMessage())) {
+                throw new Exception("error");
+            }
+        } catch (Exception e) {
+            log.error("Exception when process message from example_topic - {}", exampleMessage.toString());
+            genericDltProducer.sendSync(
+                    "topico-exemplo-1-dlt",
+                    exampleMessage.getPayload(),
+                    e.toString()
+            );
+        }
+
     }
 }

@@ -56,7 +56,7 @@ spring:
     listener:
       type: batch
       concurrency: 2
-      ack-mode: batch
+      ack-mode: record
       poll-timeout: 90000
       auto-startup: true
 
@@ -65,5 +65,6 @@ spring:
         retries: 3
 
     topics:
-      topic-1: topico-exemplo-1
-      group-1: pfx_${spring.kafka.topics.topic-1}
+      example:
+        topic: topico-exemplo-1
+        group: pfx_${spring.kafka.topics.example.topic}
